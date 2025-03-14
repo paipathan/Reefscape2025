@@ -10,8 +10,10 @@ import com.ctre.phoenix6.Utils;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Vision;
@@ -61,6 +63,15 @@ public class Container {
                 mode = Mode.Coral;
                 coralLevel = Elevator.Position.L2_Coral;
                 algaeLevel = Elevator.Position.Low_Algae;
+
+                SmartDashboard.putBoolean("L2", coralLevel == Elevator.Position.L2_Coral);
+                SmartDashboard.putBoolean("L3", coralLevel == Elevator.Position.L3_Coral);
+                SmartDashboard.putBoolean("L4", coralLevel == Elevator.Position.L4_Coral);
+
+                SmartDashboard.putBoolean("CORAL MODE", mode == Mode.Coral);
+                SmartDashboard.putBoolean("ALGAE MODE", mode == Mode.Algae);
+
+
         }
 
         public Drivetrain getDrivetrain() {
@@ -145,16 +156,16 @@ public class Container {
 
         public Command driveToPose(Pose2d target) {
                 ChassisSpeeds speeds = new ChassisSpeeds(
-                        -Constants.Drivetrain.translationPID.calculate(getRobotPose().getX(), target.getX()),
-                        -Constants.Drivetrain.translationPID.calculate(getRobotPose().getY(), target.getY()),
-                        -Constants.Drivetrain.headingPID.calculate(Utilities.getDegrees(getRobotPose()), Utilities.getDegrees(target))
+                        Constants.Drivetrain.translationPID.calculate(getRobotPose().getX(), target.getX()),
+                        Constants.Drivetrain.translationPID.calculate(getRobotPose().getY(), target.getY()),
+                        Constants.Drivetrain.headingPID.calculate(Utilities.getDegrees(getRobotPose()), Utilities.getDegrees(target))
                 );
 
                 return drivetrain.driveFieldCentric(speeds);
         }
 
         public Command stow() {
-                return Commands.sequence(
+                Command command = Commands.sequence(
                         Commands.either(
                                 arm.setPosition(Arm.Position.Hold_Algae),
                                 arm.setPosition(Arm.Position.Stow),
@@ -162,11 +173,14 @@ public class Container {
                                 () -> arm.hasAlgae()
                         ),
                         elevator.setPosition(Elevator.Position.Stow)
-                );
+                ).withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
+
+                command.addRequirements(getArm(), getElevator());
+                return command;
         }
 
         public Command runIntake() {
-                return Commands.sequence(
+                Command command = Commands.sequence(
                         arm.setPosition(Arm.Position.Stow),
                         Commands.either(
                                 Commands.sequence(
@@ -187,11 +201,13 @@ public class Container {
 
                                 () -> mode == Mode.Coral
                         )
-                );
+                ).withInterruptBehavior(InterruptionBehavior.kCancelSelf);
+                command.addRequirements(getArm(), getElevator());
+                return command;
         }
 
         public Command runOuttake() {
-                return Commands.either(
+                Command command = Commands.either(
                         Commands.either(
                                 arm.outtakeCoral(),
                                 Commands.sequence(
@@ -226,6 +242,8 @@ public class Container {
                         ),
 
                         () -> mode == Mode.Coral
-                );
+                ).withInterruptBehavior(InterruptionBehavior.kCancelSelf);
+                command.addRequirements(getArm(), getElevator());
+                return command;
         }
 }

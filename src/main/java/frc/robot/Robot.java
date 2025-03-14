@@ -9,6 +9,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.ButtonBoard.Action;
 import frc.robot.subsystems.Vision.Camera;
@@ -63,8 +64,8 @@ public class Robot extends TimedRobot {
                 if (board.getButtonPressed(Action.Mode_Algae)) container.modeAlgae();
 
                 if (controller.getAButtonPressed()) container.stow().schedule();
-                if (controller.getXButtonPressed()) container.getDrivetrain().seedFieldCentric();
                 
+
                 if (board.getButtonPressed(Action.Target_Low)) container.targetLow();
                 if (board.getButtonPressed(Action.Target_Medium)) container.targetMedium();
                 if (board.getButtonPressed(Action.Target_High)) container.targetHigh();
